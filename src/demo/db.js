@@ -1,4 +1,5 @@
 import { SCHEMA_SQL, SCHEMA_VERSION, TABLE_NAMES } from "./schema.js";
+import { beginPreparation, completeStage, onPreparationFailed, setStage } from "./progress.js";
 
 const DB_NAME = "idb://warq-demo";
 
@@ -29,6 +30,7 @@ const NUMERIC_COLUMNS = new Set([
 let dbPromise = null;
 const columnCache = new Map();
 let activeTx = null;
+let dbGeneration = 0;
 
 export function camelToSnake(value) {
   return String(value).replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
@@ -95,37 +97,69 @@ export function rowsToDocs(result) {
   return (result?.rows || []).map(rowToDoc);
 }
 
-async function bootDatabase() {
+async function bootDatabase(generation) {
+  beginPreparation();
+  setStage("engine", "Fetching the PostgreSQL engine (WebAssembly) and opening the local database.");
   const { PGlite } = await import("@electric-sql/pglite");
+  if (generation !== dbGeneration) throw new Error("The database start-up was abandoned.");
+  completeStage("engine", "The PostgreSQL engine has loaded.");
+  setStage("cluster", "Compiling PostgreSQL and creating the local database — the slowest step on a first visit.");
   const persistent = typeof indexedDB !== "undefined";
   const db = persistent ? new PGlite(DB_NAME) : new PGlite();
   await db.waitReady;
+  if (generation !== dbGeneration) {
+    try {
+      await db.close();
+    } catch {
+      void 0;
+    }
+    throw new Error("The database start-up was abandoned.");
+  }
+  completeStage("cluster", "PostgreSQL is running inside this browser tab.");
+  setStage("schema", "Checking the database schema.");
+  const hasSettings = await db.query(
+    "SELECT 1 AS present FROM information_schema.tables WHERE table_name = 'system_settings' LIMIT 1",
+  );
   let meta = null;
-  try {
+  if (hasSettings.rows?.length) {
     const existing = await db.query("SELECT value FROM system_settings WHERE key = 'demo_meta'");
     meta = existing.rows?.[0]?.value ?? null;
-  } catch {
-    meta = null;
   }
   const parsedMeta = typeof meta === "string" ? safeParse(meta) : meta;
-  if (parsedMeta && parsedMeta.schemaVersion && parsedMeta.schemaVersion !== SCHEMA_VERSION) {
+  const versionMismatch = Boolean(
+    parsedMeta && parsedMeta.schemaVersion && parsedMeta.schemaVersion !== SCHEMA_VERSION,
+  );
+  if (versionMismatch) {
     for (const table of TABLE_NAMES) {
       await db.exec(`DROP TABLE IF EXISTS ${table} CASCADE`);
     }
   }
-  await db.exec(SCHEMA_SQL);
+  if (versionMismatch || !parsedMeta || parsedMeta.schemaVersion !== SCHEMA_VERSION) {
+    await db.exec(SCHEMA_SQL);
+  }
+  completeStage("schema", "The database schema is in place.");
   return db;
 }
 
 export function getDb() {
   if (!dbPromise) {
-    dbPromise = bootDatabase().catch((error) => {
-      dbPromise = null;
+    const generation = dbGeneration;
+    dbPromise = bootDatabase(generation).catch((error) => {
+      if (generation === dbGeneration) dbPromise = null;
       throw error;
     });
   }
   return dbPromise;
 }
+
+export function abandonDatabase() {
+  dbGeneration += 1;
+  dbPromise = null;
+}
+
+onPreparationFailed(() => {
+  abandonDatabase();
+});
 
 export async function resetDatabase() {
   await withTransaction(async () => {

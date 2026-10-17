@@ -187,3 +187,87 @@ test.describe("WarQ demo smoke", () => {
     await expect(page.locator(".wq-gate")).toBeVisible({ timeout: 90000 });
   });
 });
+
+test.describe("demo preparation progress", () => {
+  test("preparation reports live progress before the demo starts", async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto("/");
+
+    const panel = page.locator(".wq-prep");
+    const bar = page.locator(".wq-prep-track");
+    await expect(panel).toBeVisible({ timeout: 90000 });
+    await expect(bar).toHaveAttribute("role", "progressbar");
+    await expect(page.locator(".wq-prep-percent")).toContainText("%");
+    await expect(page.locator(".wq-prep-meta")).toContainText(/Elapsed \d\d:\d\d/);
+    await expect(page.locator(".wq-prep-detail")).not.toBeEmpty();
+    await expect(page.locator(".wq-prep-stage")).not.toBeEmpty();
+
+    const percentages = new Set();
+    const stages = new Set();
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      if (await page.locator(".wq-prep.is-done").count()) break;
+      const value = await bar.getAttribute("aria-valuenow").catch(() => null);
+      if (value !== null) percentages.add(value);
+      const stage = await page
+        .locator(".wq-prep-stage")
+        .innerText()
+        .catch(() => "");
+      if (stage.trim()) stages.add(stage.trim());
+      await page.waitForTimeout(250);
+    }
+    expect(percentages.size, `percentages seen: ${[...percentages].join(", ")}`).toBeGreaterThan(3);
+    expect(stages.size).toBeGreaterThan(0);
+
+    await expect(page.locator(".wq-prep.is-done")).toBeVisible({ timeout: 30000 });
+    await expect(page.locator(".wq-prep-stage")).toContainText(/Demo ready/i);
+    await expect(page.getByRole("button", { name: /Start demo as a shopkeeper/i })).toBeEnabled();
+    expect(errors, `console errors: ${errors.join(" | ")}`).toEqual([]);
+  });
+
+  test("a returning visitor reuses the prepared data", async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto("/");
+    await expect(page.locator(".wq-prep.is-done")).toBeVisible({ timeout: 90000 });
+    const first = await page.evaluate(() => window.__warqDemoPrep());
+    expect(first.reused).toBe(false);
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: /Start demo as a shopkeeper/i })).toBeEnabled({
+      timeout: 90000,
+    });
+    const second = await page.evaluate(() => window.__warqDemoPrep());
+    expect(second.reused).toBe(true);
+    expect(second.done).toBe(true);
+    expect(second.percent).toBe(100);
+    expect(errors, `console errors: ${errors.join(" | ")}`).toEqual([]);
+  });
+
+  test("a stalled engine download fails visibly and recovers on retry", async ({ page }) => {
+    const errors = trackErrors(page);
+    let aborted = 0;
+    await page.route(/pglite-.*\.wasm$/, async (route) => {
+      if (aborted < 1) {
+        aborted += 1;
+        await route.abort("failed");
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/");
+    const errorPanel = page.locator(".wq-prep-error");
+    await expect(errorPanel).toBeVisible({ timeout: 90000 });
+    await expect(errorPanel).toContainText(/stalled|could not/i);
+    await expect(page.getByRole("button", { name: /Start demo as a shopkeeper/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Preparing demo data/i })).toBeDisabled();
+
+    await errorPanel.getByRole("button", { name: /Try again/i }).click();
+    await expect(page.locator(".wq-prep.is-done")).toBeVisible({ timeout: 120000 });
+    await expect(page.getByRole("button", { name: /Start demo as a shopkeeper/i })).toBeEnabled();
+
+    const surprising = errors.filter(
+      (text) => !/ERR_FAILED|Failed to load resource|Failed to fetch/i.test(text),
+    );
+    expect(surprising, `console errors: ${surprising.join(" | ")}`).toEqual([]);
+  });
+});

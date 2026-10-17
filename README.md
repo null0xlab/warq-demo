@@ -67,6 +67,30 @@ flowchart TD
 5. Each printed QR embeds a deflate-compressed warranty payload plus a CRC-32
    checksum, so the public page renders even with no database at all.
 
+### First-load preparation
+
+The first visit in a browser must download and compile the PostgreSQL WebAssembly
+engine, create the database and seed the sample data. The gate shows a transparent
+progress panel while that happens instead of a static "preparing" button:
+
+- a stage label that names the **real current step** — engine → PostgreSQL start →
+  schema → existing-data check → seeding → QR signing → verification;
+- a bar and a percentage that only reach 100% after the work actually finishes;
+- `Elapsed mm:ss` and a remaining-time estimate that is re-calibrated from the
+  measured stage timings recorded on each successful run, so it sharpens over time;
+- one line of plain language describing what the current step is doing.
+
+Most stages report precise progress. The engine compile blocks the main thread and
+reports nothing, so during that window the bar advances on a self-calibrating
+estimate and never appears frozen. The panel is only shown after 600 ms, so a
+returning visitor — whose data already exists — sees the gate enable almost at once
+with a brief **Demo ready!** note rather than a progress bar. Screen readers get a
+polite status announcement per stage, not one per second.
+
+If preparation cannot finish — for example the engine download is blocked or stalls
+— the panel stops, explains what failed and offers **Try again**, which restarts
+from a clean state. The gate is never left loading forever.
+
 ---
 
 ## Demo credentials
@@ -94,11 +118,13 @@ notifications, payments and audit logs.
 
 ## 3-minute judge walkthrough
 
-1. **Open the app.** The first screen explains WarQ in two lines. Click
-   **Start demo as a shopkeeper**. The floating **Judge guide** (bottom-right)
-   ticks off steps as you go. The dashboard also shows the **AI Preview** cards,
-   each badged **Implemented** (computed from live data) or **Preview**
-   (heuristic projection).
+1. **Open the app.** The first screen explains WarQ in two lines. On a first visit
+   the gate shows a live progress panel while the in-browser database and sample
+   data are prepared (see *First-load preparation* above) and enables
+   **Start demo as a shopkeeper** the moment it is ready. The floating **Judge
+   guide** (bottom-right) ticks off steps as you go. The dashboard also shows the
+   **AI Preview** cards, each badged **Implemented** (computed from live data) or
+   **Preview** (heuristic projection).
 2. **Requests → create a QR warranty.** Add a product, customer and warranty
    duration, then generate the QR folder. Open it to see the QR image and
    printable warranty card.
@@ -193,6 +219,16 @@ leave it empty (the default) to stay fully offline.
   locally and shown on screen, clearly labelled as demo-only.
 - **Payments are not real.** The bKash/Nagad checkout is a sandbox simulator with
   test cards and a permanent “no real payment” banner.
+- **The first load in a browser is the slow one (about 5–8 seconds).** Almost all
+  of it is downloading and compiling the ~10 MB PostgreSQL WebAssembly engine and
+  running `initdb` inside the tab, and roughly 2.5–3 seconds of that is a single
+  main-thread stall that cannot be avoided while the engine stays on the main
+  thread. That is exactly why the gate shows a live, per-stage progress panel
+  rather than hiding the wait. Returning visits reuse the stored database and are
+  ready in about a second. Web Worker and OPFS variants were measured and
+  rejected: a worker plus `idb://` was roughly 100× slower to seed (each statement
+  triggers a full filesystem flush), `relaxedDurability: true` made persistence
+  unreliable across reloads, and `opfs-ahp://` failed on the very first run.
 - **Data is per-browser.** Records live in IndexedDB on your device; there is no
   shared backend, so two different devices do not see the same data. Cross-tab
   sync uses a `BroadcastChannel` and works within one browser.

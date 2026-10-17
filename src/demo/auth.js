@@ -141,10 +141,39 @@ export async function upsertCredential({ uid, email, password, emailVerified = t
   return accounts[normalized];
 }
 
+export async function upsertCredentials(entries) {
+  const accounts = listAccounts();
+  const list = Array.isArray(entries) ? entries : [];
+  const prepared = await Promise.all(
+    list.map(async (entry) => {
+      const normalized = String(entry.email || "").trim().toLowerCase();
+      const salt = randomHex(16);
+      const derived = await hashPassword(entry.password, salt);
+      const account = {
+        uid: entry.uid,
+        email: normalized,
+        salt,
+        hash: derived.hash,
+        algo: derived.algo,
+        iterations: derived.iterations,
+        emailVerified: Boolean(entry.emailVerified ?? true),
+        role: entry.role || "merchant",
+        adminId: entry.adminId ?? null,
+        createdAt: new Date().toISOString(),
+      };
+      return [normalized, account];
+    }),
+  );
+  for (const [normalized, account] of prepared) {
+    accounts[normalized] = account;
+  }
+  writeAccounts(accounts);
+  return accounts;
+}
+
 export function markSeeded(value) {
   writeJson(SEED_KEY, Boolean(value));
 }
-
 export function isSeeded() {
   return readJson(SEED_KEY, false);
 }
@@ -462,6 +491,23 @@ export function verifyEmailImmediately(uid) {
   writeAccounts(accounts);
   notifyAll();
   return true;
+}
+
+export function verifyEmailsImmediately(uids) {
+  const accounts = listAccounts();
+  const wanted = new Set(Array.isArray(uids) ? uids : []);
+  let changed = false;
+  for (const account of Object.values(accounts)) {
+    if (wanted.has(account.uid) && !account.emailVerified) {
+      account.emailVerified = true;
+      changed = true;
+    }
+  }
+  if (changed) {
+    writeAccounts(accounts);
+    notifyAll();
+  }
+  return changed;
 }
 
 export function sessionsSnapshot() {

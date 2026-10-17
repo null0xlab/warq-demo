@@ -1,7 +1,24 @@
-import { insert, nowIso, autoId, getMeta, setMeta, resetDatabase, query, setSettings, withTransaction } from "./db.js";
+import {
+  insert,
+  nowIso,
+  autoId,
+  getMeta,
+  setMeta,
+  resetDatabase,
+  query,
+  setSettings,
+  withTransaction,
+} from "./db.js";
 import { SCHEMA_VERSION } from "./schema.js";
-import { upsertCredential, verifyEmailImmediately, markSeeded } from "./auth.js";
+import { upsertCredentials, verifyEmailsImmediately, markSeeded } from "./auth.js";
 import { registerQrRecords } from "./qr-payload.js";
+import {
+  completeStage,
+  failPreparation,
+  finishPreparation,
+  reportProgress,
+  setStage,
+} from "./progress.js";
 
 export const DEMO_PASSWORD = "warq1234";
 export const ADMIN_ID = "warq-admin";
@@ -263,16 +280,22 @@ function timelineEntry(status, at, note) {
 }
 
 async function seedUsers() {
-  for (const account of DEMO_ACCOUNTS) {
-    await upsertCredential({
+  const credentials = upsertCredentials(
+    DEMO_ACCOUNTS.map((account) => ({
       uid: account.uid,
       email: account.email,
       password: account.password,
       emailVerified: true,
       role: account.role,
       adminId: account.role === "admin" ? account.adminId : null,
-    });
-  }
+    })),
+  );
+  const recordCount = SHOPS.length + CUSTOMER_ACCOUNTS.length + 1;
+  let recordIndex = 0;
+  const markRecord = () => {
+    recordIndex += 1;
+    reportProgress("accounts", recordIndex / recordCount);
+  };
 
   for (const shop of SHOPS) {
     const createdAt = daysAgo(150 + between(0, 90));
@@ -306,6 +329,7 @@ async function seedUsers() {
       createdAt,
       updatedAt: nowIso(),
     });
+    markRecord();
   }
 
   for (const account of CUSTOMER_ACCOUNTS) {
@@ -329,6 +353,7 @@ async function seedUsers() {
       createdAt: daysAgo(200),
       updatedAt: nowIso(),
     });
+    markRecord();
   }
 
   await insert("users", {
@@ -349,13 +374,27 @@ async function seedUsers() {
     createdAt: daysAgo(300),
     updatedAt: nowIso(),
   });
+  markRecord();
+  await credentials;
 }
 
-async function seedInventory() {
+async function seedInventory(onProgress) {
   const products = [];
   const soldRecords = [];
   let soldCursor = 0;
   let customerCursor = 0;
+  const totalUnits = SHOPS.reduce((sum, shop) => {
+    const soldForShop = Math.round(shop.soldCount / shop.products.length);
+    const unusedForShop = Math.max(1, Math.round(shop.unusedCount / shop.products.length));
+    return sum + shop.products.length * (soldForShop + unusedForShop);
+  }, 0);
+  let completedUnits = 0;
+  const tickUnit = () => {
+    completedUnits += 1;
+    if (typeof onProgress === "function") {
+      onProgress(completedUnits / Math.max(1, totalUnits));
+    }
+  };
 
   for (const shop of SHOPS) {
     let shopSoldCursor = 0;
@@ -585,6 +624,7 @@ async function seedInventory() {
 
         const stored = await insert("qrs", qr);
         products.push(stored);
+        tickUnit();
       }
     }
   }
@@ -607,6 +647,7 @@ async function seedInventory() {
     }
   }
 
+  if (typeof onProgress === "function") onProgress(1);
   return { products, soldRecords };
 }
 
@@ -1060,26 +1101,63 @@ export async function seedAll() {
       deliveryCharge: 120,
       updatedBy: "demo-admin",
     });
+
+    setStage("accounts", "Hashing the demo passwords, then writing the shop, customer and administrator records.");
     await seedUsers();
-    const { products, soldRecords } = await seedInventory();
+    completeStage("accounts", "Sample accounts are ready with hashed passwords.");
+
+    setStage("catalogue", "Creating sticker folders, products, QR codes and recorded sales.");
+    const { products, soldRecords } = await seedInventory((ratio) => reportProgress("catalogue", ratio * 0.92));
+    completeStage("catalogue", `${products.length} warranty codes and ${soldRecords.length} recorded sales are ready.`);
+
+    setStage("claims", "Attaching submitted, reviewing, approved and resolved claims.");
     await seedClaims(soldRecords);
+    completeStage("claims");
+
+    setStage("chat", "Loading the assistant conversation and the support threads.");
     await seedChat();
+    completeStage("chat");
+
+    setStage("billing", "Restoring subscription payments, printed-sticker orders and the access request.");
     await seedBilling();
+    completeStage("billing");
+
+    setStage("inbox", "Filling the notification inbox.");
     await seedNotifications();
+    completeStage("inbox");
+
+    setStage("audit", "Writing the administrator activity log.");
     await seedAudit();
-    await registerQrRecords(products);
-    for (const account of DEMO_ACCOUNTS) verifyEmailImmediately(account.uid);
+    completeStage("audit");
+
+    setStage("qr", "Compressing and checksum-signing every printable QR payload.");
+    await registerQrRecords(products, (ratio) => reportProgress("qr", ratio));
+    completeStage("qr", `${products.length} QR payloads carry an offline-readable copy of the warranty.`);
+
+    setStage("verify", "Confirming the seeded accounts and marking the demo data complete.");
+    verifyEmailsImmediately(DEMO_ACCOUNTS.map((account) => account.uid));
     markSeeded(true);
+    completeStage("verify", "The demo data is complete.");
+
     return { qrs: products.length, sold: soldRecords.length };
   });
 }
 
 export async function seedIfNeeded() {
   const meta = await getMeta();
+  setStage("check", "Checking for previously prepared demo data.");
   if (meta?.seeded && meta?.schemaVersion === SCHEMA_VERSION && meta?.seed === SEED_NAME) {
+    completeStage("check", "Existing demo data found — reusing it instead of rebuilding.");
+    finishPreparation({
+      reused: true,
+      detail: "Existing demo data was reused, so nothing had to be rebuilt.",
+    });
     return { seeded: false, meta };
   }
+  completeStage("check", "No usable demo data found, preparing a fresh dataset.");
+  setStage("reset", "Removing any partial records so the sample data stays free of duplicates.");
   await resetDatabase();
+  completeStage("reset", "Starting from an empty, consistent dataset.");
   const result = await seedAll();
   const nextMeta = {
     schemaVersion: SCHEMA_VERSION,
@@ -1090,6 +1168,9 @@ export async function seedIfNeeded() {
     soldCount: result.sold,
   };
   await setMeta(nextMeta);
+  finishPreparation({
+    detail: "All sample shops, customers, warranties, claims and chat history are loaded.",
+  });
   return { seeded: true, meta: nextMeta, ...result };
 }
 
@@ -1108,11 +1189,16 @@ export async function reseedEverything() {
 }
 
 let ensurePromise = null;
+let ensureGeneration = 0;
 
 export function ensureSeeded() {
   if (!ensurePromise) {
+    const generation = (ensureGeneration += 1);
     ensurePromise = seedIfNeeded().catch((error) => {
-      ensurePromise = null;
+      if (generation === ensureGeneration) {
+        ensurePromise = null;
+        failPreparation(error);
+      }
       throw error;
     });
   }

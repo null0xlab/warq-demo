@@ -125,8 +125,9 @@ export async function decodeRecord(token) {
   return expandRecord(JSON.parse(json));
 }
 
-export async function registerQrRecords(records) {
+export async function registerQrRecords(records, onProgress) {
   const list = records || [];
+  let done = 0;
   for (const record of list) {
     if (!record?.code) continue;
     try {
@@ -135,6 +136,8 @@ export async function registerQrRecords(records) {
     } catch {
       registry.delete(record.code);
     }
+    done += 1;
+    if (typeof onProgress === "function") onProgress(done / Math.max(1, list.length));
   }
 }
 

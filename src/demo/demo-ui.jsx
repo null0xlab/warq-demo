@@ -18,6 +18,7 @@ import {
   signOutAdmin,
   signOutUser,
 } from "./auth.js";
+import { getProgress, livePercent, subscribeProgress } from "./progress.js";
 
 const STARTED_KEY = "warq.demo.judge.started.v1";
 const STEPS_KEY = "warq.demo.judge.steps.v1";
@@ -179,6 +180,68 @@ function currentAccount(session) {
   return DEMO_ACCOUNTS.find(account => account.uid === session.user.uid) || null;
 }
 
+function formatClock(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const minutes = String(Math.floor(total / 60)).padStart(2, "0");
+  const seconds = String(total % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function remainingLabel(percent, elapsedMs) {
+  const fraction = Math.max(0, Math.min(1, percent / 100));
+  if (fraction < 0.08) return "Estimating the time remaining…";
+  const remainingMs = (elapsedMs * (1 - fraction)) / fraction;
+  if (!Number.isFinite(remainingMs) || remainingMs < 1500) return "Almost ready…";
+  const seconds = Math.max(2, Math.round(remainingMs / 1000));
+  if (seconds < 60) return `About ${seconds} seconds remaining`;
+  const minutes = Math.round(seconds / 60);
+  return `About ${minutes} minute${minutes === 1 ? "" : "s"} remaining`;
+}
+
+function usePreparation() {
+  const [prep, setPrep] = useState(() => getProgress());
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => subscribeProgress(setPrep), []);
+  useEffect(() => {
+    if (!prep.active) return undefined;
+    const timer = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(timer);
+  }, [prep.active]);
+  return { prep, now };
+}
+
+function PrepPanel({ prep, now }) {
+  const percent = Math.max(0, Math.min(100, Math.round(livePercent(prep, now))));
+  const done = prep.done;
+  const elapsedMs = Math.max(0, (prep.finishedAt || now) - prep.startedAt);
+  const stageLabel = done ? "Demo ready!" : prep.label || "Preparing the demo";
+  return (
+    <div className={done ? "wq-prep is-done" : "wq-prep"}>
+      <div className="wq-prep-head">
+        <span className="wq-prep-stage">{stageLabel}</span>
+        <span className="wq-prep-percent">{percent}%</span>
+      </div>
+      <div
+        className="wq-prep-track"
+        role="progressbar"
+        aria-label="Demo preparation progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-valuetext={`${percent} percent, ${stageLabel}`}
+      >
+        <div className="wq-prep-fill" style={{ width: `${percent}%` }} />
+        {done ? null : <span className="wq-prep-shimmer" aria-hidden="true" />}
+      </div>
+      <div className="wq-prep-meta">
+        <span>Elapsed {formatClock(elapsedMs)}</span>
+        <span>{done ? "Sample data ready" : remainingLabel(percent, elapsedMs)}</span>
+      </div>
+      <p className="wq-prep-detail">{prep.detail}</p>
+    </div>
+  );
+}
+
 export function DemoUi() {
   const route = useDemoRoute();
   const session = useSession();
@@ -187,31 +250,37 @@ export function DemoUi() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(() => !readJson(STARTED_KEY, false));
   const [showTransparency, setShowTransparency] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { prep, now } = usePreparation();
+  const [prepPanelSeen, setPrepPanelSeen] = useState(false);
+  const [showReady, setShowReady] = useState(false);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState(null);
   const [events, setEvents] = useState(() => readJson(EVENTS_KEY, []));
   const [done, setDone] = useState(() => readJson(STEPS_KEY, {}));
+  const ready = prep.done;
 
   useEffect(() => {
-    let alive = true;
-    ensureSeeded()
-      .then(() => {
-        if (alive) setReady(true);
-      })
-      .catch((error) => {
-        if (alive) {
-          setNotice({
-            tone: "error",
-            title: "Demo data could not be prepared",
-            message: error?.message || "Reload the page to try again.",
-          });
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+    if (!prep.active) return undefined;
+    const age = Date.now() - prep.startedAt;
+    if (age >= 600) {
+      setPrepPanelSeen(true);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setPrepPanelSeen(true), 600 - age);
+    return () => window.clearTimeout(timer);
+  }, [prep.active, prep.startedAt]);
+
+  useEffect(() => {
+    if (prep.active) {
+      setShowReady(false);
+      return undefined;
+    }
+    const took = prep.finishedAt - prep.startedAt;
+    if (!prep.done || !prepPanelSeen || took < 1600) return undefined;
+    setShowReady(true);
+    const timer = window.setTimeout(() => setShowReady(false), 1500);
+    return () => window.clearTimeout(timer);
+  }, [prep.active, prep.done, prep.finishedAt, prep.startedAt, prepPanelSeen]);
 
   const completed = useMemo(() => {
     const next = { ...done };
@@ -334,6 +403,22 @@ export function DemoUi() {
               record lives in your browser, nothing is charged and no real customer data is used.
             </p>
             <div className="wq-gate-actions">
+              {prep.failed ? (
+                <div className="wq-prep-error" role="alert">
+                  <strong>Preparation hit a problem.</strong>
+                  <p>{prep.error} Reloading starts the preparation again from a clean state.</p>
+                  <div>
+                    <button className="wq-btn-primary" onClick={() => window.location.reload()}>
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {(prep.active && prepPanelSeen) || (prep.done && showReady) ? (
+                <PrepPanel prep={prep} now={now} />
+              ) : null}
+
               {DEMO_ACCOUNTS.filter(item => item.key === SUGGESTED_FIRST).map(item => (
                 <button
                   key={item.key}
@@ -350,6 +435,15 @@ export function DemoUi() {
               <button className="wq-btn-ghost" onClick={startDemo} disabled={Boolean(busy) || !ready}>
                 Skip and explore the sign-in page
               </button>
+            </div>
+            <div className="wq-sr-only" role="status" aria-live="polite">
+              {prep.failed
+                ? "Demo preparation failed. Use the try again button to retry."
+                : prep.active
+                  ? `${prep.label} in progress.`
+                  : prep.done
+                    ? "Demo data is ready."
+                    : ""}
             </div>
             <p className="wq-fineprint">
               Seeded logins: shopkeepers <code>rahman@warq.demo</code>, <code>ctg@warq.demo</code>,{" "}
@@ -573,6 +667,25 @@ const DEMO_UI_CSS = `
 .wq-gate-card h1{margin:6px 0 12px;font-size:clamp(22px,4vw,32px);line-height:1.2}
 .wq-lead{margin:0 0 14px;color:#c7d2fe}
 .wq-gate-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.wq-prep,.wq-prep-error{flex:1 1 100%;width:100%}
+.wq-prep{padding:14px 16px;border:1px solid #1f2a44;border-radius:14px;background:#0f1a2e}
+.wq-prep.is-done{border-color:#1c6b45;background:#0f2a1d}
+.wq-prep-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.wq-prep-stage{font-weight:600;font-size:13px}
+.wq-prep-percent{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px;color:#7dd3fc}
+.wq-prep.is-done .wq-prep-percent{color:#4ade80}
+.wq-prep-track{position:relative;margin:10px 0 8px;height:8px;border-radius:999px;background:#16223c;overflow:hidden}
+.wq-prep-fill{position:absolute;top:0;bottom:0;left:0;border-radius:999px;background:linear-gradient(90deg,#2563eb,#38bdf8);transition:width .35s ease}
+.wq-prep.is-done .wq-prep-fill{background:linear-gradient(90deg,#15803d,#22c55e)}
+.wq-prep-shimmer{position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.25) 50%,rgba(255,255,255,0) 100%);transform:translateX(-100%);animation:wq-prep-sweep 1.4s linear infinite}
+@keyframes wq-prep-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.wq-prep-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;font-size:12px;color:#8aa2c8;font-variant-numeric:tabular-nums}
+.wq-prep-detail{margin:8px 0 0;font-size:12px;color:#a9bcd8}
+.wq-prep-error{padding:14px 16px;border:1px solid #7f1d1d;border-left:4px solid #ef4444;border-radius:12px;background:#1b0f12}
+.wq-prep-error strong{display:block;font-size:13px;color:#fecaca}
+.wq-prep-error p{margin:4px 0 10px;font-size:12px;color:#e7c6c6}
+.wq-prep-error div{display:flex;flex-wrap:wrap;gap:8px}
+.wq-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .wq-fineprint{font-size:12px;color:#8aa2c8;margin:0}
 .wq-fineprint code{background:#111c33;border:1px solid #26344f;border-radius:6px;padding:1px 5px;color:#e6edf7}
 .wq-modal{position:fixed;inset:0;z-index:95;background:rgba(3,7,18,.7);display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto}
@@ -589,6 +702,12 @@ const DEMO_UI_CSS = `
   .wq-launcher{bottom:78px;right:10px;padding:8px 12px}
   .wq-launcher-text{display:none}
   .wq-gate-card{padding:18px}
+  .wq-prep{padding:12px}
+  .wq-prep-percent{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .wq-prep-fill{transition:none}
+  .wq-prep-shimmer{animation:none;opacity:.45}
 }
 `;
 

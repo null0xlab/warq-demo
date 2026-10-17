@@ -42,6 +42,7 @@ Legend for **Fidelity**:
 | Payment gateway redirect | bKash / Nagad hosted checkout | Real merchant credentials | Sandbox checkout route `#/sandbox/<paymentId>`. | Simulated |
 | Email delivery | Firebase / SMTP | Outbound email service | Codes and notices are shown on screen, labelled demo. | Simulated |
 | Google Lens / third‑party scanner | Public HTTPS URL | A real domain is needed for a printed QR to resolve | Deployed to GitHub Pages. The compressed payload keeps even a dead link readable. | Equivalent |
+| First‑load startup | Server already running; the page is interactive immediately | A production server keeps PostgreSQL warm | The WebAssembly engine must be downloaded, compiled and `initdb`‑ed in the tab on a first visit (about 5–8 s, mostly a single main‑thread stall). A transparent stage‑by‑stage progress panel reports the real steps and the estimate is re‑calibrated from measured timings; later visits reuse the stored database in about a second. | Simulated (disclosed) |
 
 ## What is identical at the code level
 
