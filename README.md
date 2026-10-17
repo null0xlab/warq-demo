@@ -99,7 +99,9 @@ notifications, payments and audit logs.
 
 1. **Open the app.** The first screen explains WarQ in two lines. Click
    **Start demo as a shopkeeper**. The floating **Judge guide** (bottom-right)
-   ticks off steps as you go.
+   ticks off steps as you go. The dashboard also shows the **AI Preview** cards,
+   each badged **Implemented** (computed from live data) or **Preview**
+   (heuristic projection).
 2. **Requests → create a QR warranty.** Add a product, customer and warranty
    duration, then generate the QR folder. Open it to see the QR image and
    printable warranty card.
