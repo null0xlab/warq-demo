@@ -124,6 +124,7 @@ import AiPreviewModule from "./ai-preview";
 import { mountDemoUi } from "./demo/demo-ui.jsx";
 import { registerQrRecords, qrScanUrl } from "./demo/qr-payload.js";
 import { ensureSeeded } from "./demo/seed.js";
+import { BASE_PATH } from "./demo/config.js";
 
 const PLANS = [
   { id: "monthly", name: "1 Month", price: 50, badge: null, desc: "Flexible starter access for quick needs", save: null },
@@ -7905,13 +7906,13 @@ function App() {
     setProduct(null);
     setFocusQrCode("");
     const onScanPath =
-      /^\/scan\//i.test(window.location.pathname) ||
+      /(^|\/)scan\//i.test(window.location.pathname) ||
       /^#\/scan\//.test(window.location.hash);
     if (onScanPath) {
       window.history.replaceState(
         { warq: true, view: "dashboard", product: false },
         "",
-        "/#/app/dashboard",
+        `${BASE_PATH}#/app/dashboard`,
       );
       setView("dashboard");
     }
@@ -7926,7 +7927,7 @@ function App() {
           onShopkeeperLogin={() => {
             // Leave the public scan URL entirely and open the normal login page.
             setCode("");
-            window.history.replaceState({}, document.title, "/");
+            window.history.replaceState({}, document.title, BASE_PATH);
           }}
         />
       );
