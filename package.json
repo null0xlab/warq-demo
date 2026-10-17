@@ -1,0 +1,36 @@
+{
+  "name": "warq-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "WarQ — serverless judge demo of the WarQ digital warranty product",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve:dist": "vite preview --port 4173",
+    "db:schema:check": "node scripts/check-schema.mjs",
+    "test:smoke": "playwright test",
+    "test:smoke:install": "playwright install chromium"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "html5-qrcode": "^2.3.8",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.468.0",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "recharts": "^2.15.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
+}

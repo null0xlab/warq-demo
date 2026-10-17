@@ -1,0 +1,3218 @@
+/* ==========================================================================
+   WARQ UI POLISH PASS (visual + responsive only — no functional changes)
+   Layers on top of styles.css / improvements.css / responsive.css.
+   Design basis: Soft UI Evolution — accessible focus rings, consistent
+   hover transitions (160-220ms), measured contrast, touch-friendly targets.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Global foundations
+   -------------------------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Balanced long headings on wide screens */
+h1, h2, h3 {
+  overflow-wrap: break-word;
+}
+
+/* Prevent long unbroken strings (codes, URLs) from overflowing any card */
+.app-content,
+.panel,
+.stat-card,
+.qr-card,
+.admin-row,
+.notification-card,
+.warranty-details,
+.product-details-grid,
+.scanner-result dd,
+.analytics-table td,
+.analytics-table th {
+  overflow-wrap: anywhere;
+}
+
+/* Smooth, GPU-cheap transitions on frequently used interactive elements */
+.primary-button,
+.secondary-button,
+.danger-button,
+.small-action,
+.text-button,
+.icon-button,
+.period-chip,
+.admin-tabs button,
+.admin-filter-pill,
+.provider-pill-btn,
+.pagination-btn,
+.chat-shortcut-button,
+.close-button,
+.header-menu button,
+.location-option,
+.folder-actions .small-action {
+  transition-property: background-color, border-color, color, box-shadow, filter, transform, opacity;
+  transition-duration: 0.18s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   2. Visible, consistent keyboard focus (WCAG 2.4.7 / 2.4.11)
+   -------------------------------------------------------------------------- */
+
+/* Subtle ring for controls; native inputs get their own softer treatment below */
+:where(a, button, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.14);
+}
+
+/* Focus ring color adapts to dark surfaces (landing / auth / print studio) */
+.landing :where(a, button, textarea):focus-visible,
+.auth-form :where(button):focus-visible,
+.verification-card button:focus-visible,
+.print-studio-toolbar :where(button, select):focus-visible {
+  outline-color: #34d399;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2);
+}
+
+/* ------------------------------------------------------------------
+   Inputs — soft focus, matching border radius preserved.
+   The base input rule (styles.css) already gives a 10px radius and a
+   gentle green border tint; we keep that and layer one calm glow ring.
+   ------------------------------------------------------------------ */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none;
+  border-radius: 10px;
+  border-color: #14b389;
+  box-shadow: 0 0 0 3px rgba(20, 179, 137, 0.13);
+}
+
+/* Dark auth inputs (landing sign in / sign up) — mint glow on deep navy */
+.auth-form input:focus,
+.auth-form input:focus-visible {
+  border-color: #2fd6a0;
+  box-shadow: 0 0 0 3px rgba(47, 214, 160, 0.16);
+}
+
+/* Admin login inputs share the light-theme treatment */
+.admin-login input:focus,
+.admin-login input:focus-visible {
+  border-color: #14b389;
+  box-shadow: 0 0 0 3px rgba(20, 179, 137, 0.13);
+}
+
+/* ------------------------------------------------------------------
+   Password field — inline eye toggle
+   ------------------------------------------------------------------ */
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #8294af;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.password-toggle:hover {
+  color: #b7c6db;
+  background: rgba(130, 148, 175, 0.12);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+  color: #2fd6a0;
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+/* Focus ring should not clip inside scrollable containers */
+.admin-tabs,
+.analytics-panel .analytics-table-wrap,
+.data-toolbar {
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   3. Interactive feedback — hover, active, disabled
+   -------------------------------------------------------------------------- */
+
+/* Subtle press feedback that never shifts layout */
+.primary-button:active:not(:disabled),
+.secondary-button:active:not(:disabled),
+.small-action:active:not(:disabled),
+.period-chip:active,
+.admin-tabs button:active,
+.payment-submit-button:active:not(:disabled),
+.chat-shortcut-button:active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.97);
+}
+
+/* Clear hover affordance for ghost / text buttons */
+.text-button:hover { color: #0c7a54; text-decoration: underline; text-underline-offset: 3px; }
+.text-button:active { color: #0a6a49; }
+
+.icon-button:hover {
+  border-color: #c8d5e4;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.small-action:hover { filter: brightness(0.96); }
+
+/* Icon buttons are small — enlarge hit area without changing visuals */
+.close-button::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 12px;
+}
+
+/* Disabled states read clearly, not just as opacity */
+button:disabled,
+button:disabled:hover {
+  transform: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+/* Danger action affordance */
+.danger-action:hover,
+.delete-text-button:hover {
+  background: #ffe0e3 !important;
+  border-color: #e78a93 !important;
+  color: #9d2436 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. App header — robust across viewports
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  gap: 12px;
+}
+
+.app-header .brand.compact {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.app-header .brand.compact > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-actions {
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+.header-actions .avatar {
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.header-actions .avatar:hover {
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.16);
+}
+.header-actions .avatar:active {
+  transform: scale(0.96);
+}
+
+/* Header menu never overflows narrow phones */
+.header-menu {
+  right: 0;
+  max-width: min(280px, calc(100vw - 24px));
+  animation: menuIn 0.16s ease-out;
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   4b. Header Navigation (Desktop & Tablet)
+   -------------------------------------------------------------------------- */
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 4px 6px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.header-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.header-nav-link:hover {
+  color: #0f172a;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header-nav-link.active {
+  color: #065f46;
+  background: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.header-nav-link.active svg {
+  color: #10b981;
+}
+
+.header-scan-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #059669, #047857);
+  border: 1px solid #047857;
+  border-radius: 9px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(5, 150, 105, 0.25);
+  transition: all 0.18s ease;
+}
+
+.header-scan-button:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+.header-scan-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 860px) {
+  .header-nav {
+    display: none;
+  }
+  .header-scan-button {
+    display: none !important;
+  }
+  .folder-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    align-items: stretch !important;
+  }
+  .folder-actions-buttons {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .folder-actions-buttons .small-action {
+    flex: 1 1 130px;
+    min-height: 38px;
+  }
+  .folder-protection-note {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    display: block !important;
+    align-self: stretch !important;
+    order: 10;
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    color: #92400e;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .qr-folder-heading {
+    gap: 12px;
+  }
+  .qr-folder-info {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .qr-folder-chips {
+    gap: 5px;
+  }
+  .qr-folder-chip {
+    font-size: 11px;
+    padding: 2.5px 7.5px;
+  }
+  .qr-folder-submeta {
+    gap: 4px 8px;
+    font-size: 10.5px;
+  }
+  .qr-folder-submeta-item + .qr-folder-submeta-item::before {
+    margin-right: 8px;
+  }
+}
+
+@media (min-width: 861px) {
+  .bottom-nav {
+    display: none !important;
+  }
+  .app-shell {
+    padding-bottom: 36px !important;
+  }
+  .chat-shortcut-button {
+    display: none !important;
+  }
+  .greeting-actions:has(> .chat-shortcut-button:only-child) {
+    display: none;
+  }
+  .qr-folder-header-actions {
+    flex: 0 0 auto !important;
+    margin-left: auto;
+    justify-content: flex-end;
+    align-self: flex-start;
+  }
+  .qr-folder-header-actions .secondary-button {
+    white-space: nowrap;
+  }
+  .folder-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+    margin-left: auto !important;
+    max-width: 560px !important;
+    flex: 0 1 auto !important;
+  }
+  .folder-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+  }
+  .folder-protection-note {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 2px !important;
+    padding: 8px 14px !important;
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+    border-radius: 8px !important;
+    color: #92400e !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.45 !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4b-2. QR Folder Layout & Metadata Chips Polish (Desktop & Mobile)
+   -------------------------------------------------------------------------- */
+
+.qr-folder-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.qr-folder-heading .row-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.qr-folder-info {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qr-folder-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.qr-folder-title-row h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.qr-folder-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.qr-folder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.qr-folder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.qr-folder-product-chip {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.qr-folder-product-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.qr-folder-brand-name {
+  color: #475569;
+  font-weight: 500;
+}
+
+.qr-folder-chip-total {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #334155;
+  font-weight: 500;
+}
+
+.qr-folder-chip-unused {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+  font-weight: 600;
+}
+
+.qr-folder-chip-activated {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.qr-folder-chip-warranty {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+  font-weight: 500;
+}
+
+.qr-folder-chip-price {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.qr-folder-submeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.qr-folder-submeta-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.qr-folder-submeta-item + .qr-folder-submeta-item::before {
+  content: "·";
+  margin-right: 12px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.qr-folder-id-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  color: #64748b;
+}
+
+.qr-folder-id-tag code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10.5px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+
+/* --------------------------------------------------------------------------
+   4c. Stock Badges & Product Card Refinements
+   -------------------------------------------------------------------------- */
+
+.product-card {
+  min-height: 128px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.product-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.product-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.product-card-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.product-card-id {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.product-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.product-card-brand {
+  font-size: 11.5px;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-card-price {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.product-card-price-label {
+  font-size: 10.5px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.product-card-revenue {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #047857;
+}
+
+.product-card-divider {
+  width: 100%;
+  height: 1px;
+  background: #f1f5f9;
+  margin: 2px 0;
+}
+
+.product-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.stock-badge.ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.stock-badge.low {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.stock-badge.out {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.product-card-warranty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+  background: #f8fafc;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   4e. Product QR Search & Filter Toolbar
+   -------------------------------------------------------------------------- */
+
+.product-qr-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Desktop-only: .product-qr-toolbar is a column flex container, so the shared
+   .data-search rule (flex: 1 1 280px) is resolved along the VERTICAL axis and
+   stretches the input into a huge square box. Reset it to a proper 44px bar on
+   laptop/desktop only — mobile layout stays untouched. */
+@media (min-width: 641px) {
+  .product-qr-toolbar .data-search {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    height: 44px;
+  }
+}
+
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.filter-chip:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.filter-chip.active {
+  background: #047857;
+  color: #ffffff;
+  border-color: #047857;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(4, 120, 87, 0.2);
+}
+
+.qr-code-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.copy-btn-inline:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* --------------------------------------------------------------------------
+   4f. Warranty Presets Chips in RequestForm
+   -------------------------------------------------------------------------- */
+
+.warranty-preset-row {
+  margin: 6px 0 2px;
+}
+
+.preset-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.preset-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.warranty-preset-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.warranty-preset-chip:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.warranty-preset-chip:active {
+  background: #047857;
+  color: #ffffff;
+  border-color: #047857;
+}
+
+/* --------------------------------------------------------------------------
+   4g. Sales Summary KPI Grid & Sale Row Details
+   -------------------------------------------------------------------------- */
+
+.sales-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sales-summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.sales-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.sales-stat-icon.green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.sales-stat-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.sales-stat-icon.teal {
+  background: #f0fdfa;
+  color: #0d9488;
+}
+
+.sales-stat-icon.orange {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.sales-summary-stat small {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: block;
+}
+
+.sales-summary-stat strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+  margin-top: 1px;
+}
+
+.sale-qr-id-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.sale-qr-id-copy-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.sale-qr-id-copy-btn.is-copied {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.customer-phone-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.customer-phone-link:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   5. Tables — readable on every screen without breaking layout
+   -------------------------------------------------------------------------- */
+
+.analytics-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.analytics-table {
+  min-width: 520px;
+  width: 100%;
+}
+
+/* Keep numeric columns compact and aligned */
+.analytics-table th.num,
+.analytics-table td.num {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-table td {
+  vertical-align: top;
+}
+
+/* Sticky header row keeps context while scrolling long tables */
+.analytics-panel .analytics-table thead th {
+  box-shadow: inset 0 -1px 0 #e2e8f0;
+}
+
+/* Polished scrollbars everywhere data scrolls */
+.analytics-table-wrap::-webkit-scrollbar,
+.manage-history-scroll::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.location-options::-webkit-scrollbar,
+.announcement-user-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.analytics-table-wrap::-webkit-scrollbar-track,
+.manage-history-scroll::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track,
+.location-options::-webkit-scrollbar-track,
+.announcement-user-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.analytics-table-wrap::-webkit-scrollbar-thumb,
+.manage-history-scroll::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb,
+.location-options::-webkit-scrollbar-thumb,
+.announcement-user-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+.analytics-table-wrap::-webkit-scrollbar-thumb:hover,
+.manage-history-scroll::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.location-options::-webkit-scrollbar-thumb:hover,
+.announcement-user-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* QR code chip inside the warranty tracking table (used by report-ui) */
+.qr-code-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  border-radius: 6px;
+  padding: 2px 7px;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* Report letterhead verified badge (used by report-ui) */
+.report-letterhead-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   6. Forms — larger, friendlier touch targets on small screens
+   -------------------------------------------------------------------------- */
+
+/* Custom chevron for selects, consistent with text input height */
+select.location-select,
+.period-controls select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+/* Date inputs align with selects */
+.period-controls input[type="date"] {
+  min-width: 0;
+}
+
+/* Labels keep breathing room; hints never collide with inputs */
+.field-hint {
+  line-height: 1.45;
+}
+
+/* Checkboxes: easier to hit */
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   7. Modals — safe-area aware, scrollable, no clipping on phones
+   -------------------------------------------------------------------------- */
+
+.modal-backdrop {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px) + 20px);
+}
+
+.scanner-modal,
+.detail-modal,
+.manage-user {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Close button always reachable, never under sticky content */
+.close-button {
+  z-index: 5;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.14);
+}
+
+/* Modal entrance: gentle scale-in (respects reduced motion below) */
+.modal-backdrop > .scanner-modal,
+.modal-backdrop > .detail-modal,
+.modal-backdrop > .manage-user {
+  animation: modalIn 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   8. Bottom navigation — safe-area + tactile feedback
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    padding-bottom: max(5px, env(safe-area-inset-bottom, 0px));
+    height: calc(var(--warq-bottom-nav-base, 68px) + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.08);
+  }
+  .app-shell {
+    padding-bottom: calc(var(--warq-bottom-nav-base, 68px) + var(--warq-bottom-nav-clearance, 16px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell { padding-bottom: calc(var(--warq-bottom-nav-base, 68px) + var(--warq-bottom-nav-clearance, 16px) + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (min-width: 861px) {
+  .bottom-nav {
+    display: none !important;
+  }
+  .app-shell {
+    padding-bottom: 36px !important;
+  }
+}
+
+/* Shells without a bottom nav (Admin panel, profile-completion) must not
+   reserve the fixed-nav clearance — that creates a large empty band under
+   the last content on phones/tablets. Same modest finish as desktop. */
+.app-shell.no-bottom-nav {
+  padding-bottom: 24px;
+}
+@media (max-width: 520px) {
+  .app-shell.no-bottom-nav {
+    padding-bottom: 16px;
+  }
+}
+
+.bottom-nav button {
+  transition: color 0.18s ease, background-color 0.18s ease;
+  min-height: 44px;
+}
+
+/* Active pill animates instead of snapping */
+.bottom-nav button.active:not(.scan-nav) > span {
+  transition: background-color 0.18s ease, width 0.18s ease;
+}
+
+/* --------------------------------------------------------------------------
+   9. Cards & panels — refined elevation + consistent radius scale
+   -------------------------------------------------------------------------- */
+
+.stat-card,
+.panel,
+.price-card,
+.sale-card-enhanced,
+.qr-folder,
+.notification-card,
+.analytics-stat,
+.analytics-panel,
+.user-access-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+/* Cards that are clickable get an affordance; static cards stay calm */
+.sale-card-enhanced:hover,
+.product-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Consistent focus treatment for catalog cards */
+.product-card:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Stat card decorative circle never leaks past rounded corners */
+.stat-card { border-radius: 16px; }
+
+/* --------------------------------------------------------------------------
+   10. Landing & auth — text balance and tap targets
+   -------------------------------------------------------------------------- */
+
+.landing h1 {
+  text-wrap: balance;
+}
+
+.subscription-hero h1 {
+  text-wrap: balance;
+}
+
+.auth-mode button {
+  min-height: 40px;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.auth-submit {
+  touch-action: manipulation;
+}
+
+/* Landing points wrap neatly on narrow screens */
+.landing-points {
+  gap: 10px 20px;
+}
+
+/* --------------------------------------------------------------------------
+   11. Admin console — tabs, filters, lists
+   -------------------------------------------------------------------------- */
+
+/* Horizontally scrollable tabs with edge fade hint */
+.admin-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+}
+.admin-tabs::-webkit-scrollbar { display: none; }
+.admin-tabs button {
+  scroll-snap-align: start;
+  min-height: 40px;
+  border-radius: 10px;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.admin-tabs button:hover:not(.active) {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .admin-tabs {
+    mask-image: linear-gradient(to right, transparent, #000 12px, #000 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 100%);
+    padding-right: calc(20px + env(safe-area-inset-right, 0px));
+    scroll-padding-right: calc(20px + env(safe-area-inset-right, 0px));
+  }
+}
+
+.admin-filter-pill,
+.admin-order-filters button {
+  min-height: 34px;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-filter-pill:hover:not(.active),
+.admin-order-filters button:hover:not(.active) {
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* Rows: gentle separator rhythm + hover feedback */
+.admin-row {
+  transition: background-color 0.15s ease;
+}
+.admin-row:hover {
+  background-color: #fbfdff;
+}
+
+/* --------------------------------------------------------------------------
+   12. Pagination & toolbars
+   -------------------------------------------------------------------------- */
+
+.pagination-btn {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pagination-btn:focus-visible {
+  outline-offset: 1px;
+}
+
+/* Search and select fields: comfortable height and touch targets */
+.data-search,
+.data-toolbar-select-btn,
+.data-toolbar-select {
+  min-height: 44px;
+}
+
+/* Sort/filter select in toolbars: consistent chevron + compact size */
+.data-toolbar-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   13. Chat board (visual refinements only)
+   -------------------------------------------------------------------------- */
+
+.chat-mode-switch button {
+  transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.chat-mode-switch button:not(.active):hover {
+  color: #0f172a;
+}
+
+/* Send button: tactile press without layout shift */
+.chat-send-btn {
+  touch-action: manipulation;
+}
+
+/* --------------------------------------------------------------------------
+   14. Print studio — responsive toolbar on phones
+   -------------------------------------------------------------------------- */
+
+.print-studio-toolbar {
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.print-studio-actions {
+  row-gap: 8px;
+}
+
+/* A4 sheet scales down gracefully on small screens instead of overflowing */
+.print-studio-scroll {
+  align-items: safe center;
+  padding: 28px max(16px, env(safe-area-inset-left, 0px));
+  overflow-x: auto;
+}
+
+.single-card-wrap {
+  padding: 16px 12px;
+}
+
+/* --------------------------------------------------------------------------
+   15. Motion preferences & print
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spin,
+  .spin-slow,
+  .pulse-dot,
+  .live-countdown-badge.active.urgent,
+  .scanner-pulse-icon,
+  .scanner-laser-line,
+  .scanner-processing-bar,
+  .auth-submit.is-busy.primary-button {
+    animation: none !important;
+  }
+}
+
+/* Tabs still readable when printing */
+@media print {
+  .admin-tabs {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  /* KPI stat cards flow to fill the printable width: no orphaned cards
+     sitting beside empty space (e.g. "Active Warranties" alone on a row).
+     auto-fit collapses unused tracks so last-row cards stretch evenly. */
+  .analytics-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+/* ==========================================================================
+   16. Tablet & desktop refinements (>= 721px)
+   ========================================================================== */
+
+@media (min-width: 721px) {
+  /* Side-by-side panels keep breathing room at every width */
+  .chart-grid { gap: 18px; }
+}
+
+/* ==========================================================================
+   17. Tablet refinements (721px – 900px)
+   Existing files already collapse grids below 768/820px; these only fill
+   the 721–900px band where side-by-side panels were touching.
+   ========================================================================== */
+
+@media (min-width: 721px) and (max-width: 900px) {
+  .analytics-stat-grid { gap: 10px; }
+  .period-controls { gap: 10px; }
+  .folder-actions .small-action { flex: 1 1 140px; }
+}
+
+/* ==========================================================================
+   17b. Mobile period controls — strict single row on phones.
+   Base style (improvements.css) is flex with align-self: flex-end arrows,
+   which wraps ">" onto a second row and leaves dead vertical space.
+   On mobile the month variant becomes a 4-track grid:
+        [ < ] [ Month select ] [ Year select ] [ > ]
+   Arrows shrink to fixed 36px tracks; selects flex into the middle space
+   so all four controls ALWAYS share one horizontal row — no wrapping,
+   no second row, no overflow. Year-only and custom-date variants (fewer
+   children) keep the centered flex treatment.
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  /* Shared alignment for every variant */
+  .period-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .period-controls .period-nav-btn {
+    width: 44px;
+    height: 44px;
+    align-self: center;
+    flex: 0 0 auto;
+  }
+
+  .period-controls label {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .period-controls select,
+  .period-controls input[type="date"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Month variant: [ < ] [ Month ] [ Year ] [ > ] locked to one row.
+     :has() targets only rows containing both a leading nav button and a
+     select — i.e. the month picker — leaving year/custom variants alone. */
+  .period-controls:has(> .period-nav-btn + label select) {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1.25fr) minmax(0, 1fr) 36px;
+    align-items: end;
+    column-gap: 6px;
+  }
+
+  .period-controls:has(> .period-nav-btn + label select) .period-nav-btn {
+    width: 36px;
+    height: 38px;
+    align-self: end;
+    justify-self: center;
+    border-radius: 8px;
+  }
+
+  /* Compact selects inside the month row: smaller padding + font so both
+     "Month" and "Year" fit between the arrows at any phone width */
+  .period-controls:has(> .period-nav-btn + label select) label {
+    gap: 3px;
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .period-controls:has(> .period-nav-btn + label select) select {
+    min-height: 38px;
+    padding: 0 24px 0 8px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+}
+
+/* Very narrow phones: tighten the grid slightly, still one row */
+@media (max-width: 380px) {
+  .period-controls:has(> .period-nav-btn + label select) {
+    grid-template-columns: 32px minmax(0, 1.25fr) minmax(0, 1fr) 32px;
+    column-gap: 4px;
+  }
+
+  .period-controls:has(> .period-nav-btn + label select) .period-nav-btn {
+    width: 32px;
+    height: 36px;
+  }
+
+  .period-controls:has(> .period-nav-btn + label select) select {
+    font-size: 11.5px;
+    padding: 0 22px 0 7px;
+  }
+}
+
+/* ==========================================================================
+   18. Mobile fixes (<= 480px)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  /* Buttons reach comfortable touch height everywhere */
+  .primary-button,
+  .secondary-button,
+  .danger-button {
+    min-height: 46px;
+    font-size: 13.5px;
+  }
+
+  /* Full-width row-title actions on phones (existing rule, kept in sync) */
+  .row-title > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Toast: always visible, never wider than the screen */
+  .toast {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    font-size: 13px;
+    animation-name: toastInMobile;
+  }
+
+  @keyframes toastInMobile {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Header stays single-line; admin tag hidden by earlier rule */
+  .app-header { gap: 8px; }
+
+  /* Provider cards stack their logo + text cleanly */
+  .provider-options .provider-card-main { min-width: 0; }
+
+  /* Warranty hero: icon above text on very narrow screens */
+  .warranty-hero-banner {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .status-hero-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  /* Countdown digits shrink to fit without wrapping */
+  .countdown-box { min-width: 52px; padding: 6px 4px; }
+  .digit-value { font-size: 20px; }
+
+  /* Report letterhead stacks cleanly */
+  .report-letterhead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  /* Sheet toolbar actions wrap under the title */
+  .print-studio-toolbar { padding: 10px 14px; }
+  .print-studio-title-group h2 { font-size: 15px; }
+  .print-studio-actions { width: 100%; }
+  .print-studio-actions .print-btn-primary,
+  .print-studio-actions .print-btn-secondary,
+  .print-studio-actions .print-btn-close {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Pagination centers with wrapped summary */
+  .pagination-bar { justify-content: center; text-align: center; }
+  .pagination-summary { width: 100%; }
+}
+
+/* ==========================================================================
+   19. Very narrow phones (<= 360px)
+   ========================================================================== */
+
+@media (max-width: 360px) {
+  .countdown-box { min-width: 46px; }
+  .digit-value { font-size: 18px; }
+  .countdown-separator { font-size: 14px; }
+  .sale-qr-preview .qr-image,
+  .sale-qr-preview .qr-placeholder { width: 58px; height: 58px; }
+}
+
+/* ==========================================================================
+   20. Admin dashboard stats — compact 2-up grid on phones.
+   Keeps the desktop layout (>= 768px) untouched; existing responsive.css
+   already switches to 2 columns at <= 640px, these rules extend that
+   compact presentation to ALL phone widths so eight stat cards never
+   stack into eight full-height rows.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .admin-page .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  /* Compact horizontal card: icon + label on row 1, value on row 2 */
+  .admin-page .admin-stats .stat-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 3px;
+    min-height: 0;
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  .admin-page .admin-stats .stat-card::after {
+    width: 40px;
+    height: 40px;
+    right: -12px;
+    bottom: -14px;
+  }
+
+  .admin-page .admin-stats .stat-card .stat-icon {
+    grid-area: 1 / 1 / 2 / 2;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+  }
+
+  .admin-page .admin-stats .stat-card .stat-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .admin-page .admin-stats .stat-card p {
+    grid-area: 1 / 2 / 2 / 3;
+    margin: 0;
+    font-size: 9.5px;
+    letter-spacing: 0.2px;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-page .admin-stats .stat-card h3 {
+    grid-area: 2 / 1 / 3 / 3;
+    font-size: 15px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ==========================================================================
+   21. User dashboard KPI cards (Net Units / Revenue / Profit / Warranties…)
+   — compact 2-up grid on phones with nothing clipped.
+   Desktop (>= 768px) keeps the auto-fit layout from improvements.css.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .analytics-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0 14px;
+  }
+
+  .analytics-stat {
+    padding: 10px 12px;
+    gap: 3px;
+    border-radius: 12px;
+  }
+
+  /* Header row: label takes its natural width; icon stays pinned right and
+     never squeezes the label text */
+  .analytics-stat-header {
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .analytics-stat-header > span:first-child {
+    min-width: 0;
+    line-height: 1.25;
+    /* multi-line labels (e.g. "Best Selling Product") wrap instead of
+       overflowing or colliding with the icon */
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .analytics-stat-icon {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+
+  .analytics-stat-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .analytics-stat span {
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .analytics-stat strong {
+    font-size: 15px;
+    line-height: 1.2;
+    /* Long values (BDT amounts, product names) wrap within the card */
+    overflow-wrap: anywhere;
+  }
+
+  /* Notes: wrap naturally instead of ellipsis-clipping, so descriptions
+     like "Gross sales minus returns" stay fully readable */
+  .analytics-stat small {
+    display: block;
+    font-size: 9px;
+    line-height: 1.3;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Very narrow phones: keep the 2-up rhythm, just breathe tighter */
+@media (max-width: 360px) {
+  .analytics-stat-grid { gap: 6px; }
+  .analytics-stat { padding: 9px 10px; }
+  .analytics-stat strong { font-size: 13.5px; }
+}
+
+/* --------------------------------------------------------------------------
+   10. Enhanced Empty States
+   -------------------------------------------------------------------------- */
+
+.empty {
+  min-height: 160px;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 20px;
+  background: #fbfcfe;
+  border-radius: 14px;
+  border: 1.5px dashed #cbd5e1;
+  margin: 14px 0;
+  gap: 6px;
+}
+
+.empty > span {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.empty > strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.empty > p {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 380px;
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+
+.empty .empty-action-btn {
+  margin-top: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   11. Bengali & Multilingual Typography Safeguards
+   -------------------------------------------------------------------------- */
+
+input,
+textarea,
+select,
+button,
+label,
+.product-card-name,
+.sale-product-name,
+.warranty-meta-grid strong,
+.product-details-grid strong,
+.product-qr-info strong {
+  line-height: 1.5;
+}
+
+/* Ensure Bengali vowel diacritics are never cut off in inputs */
+input,
+textarea {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Modal Backdrops & Dialogs Polish
+   -------------------------------------------------------------------------- */
+
+.modal-backdrop,
+.detail-modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.detail-modal {
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   14. Dashboard Page & Product Catalog Layout Guarantees
+   - Ensures top navigation sticky positioning remains anchored at top=0 with z-index: 50.
+   - Ensures bottom navigation stays rock-solid pinned with dedicated compositor layer (z-index: 100).
+   - Prevents Recharts & analytics panels from causing subpixel resize loops or horizontal blowout.
+   - Ensures activity feed and product catalog expand naturally without trapped inner scrollboxes.
+   - Strictly contains all horizontal dimensions across all mobile viewports.
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #ffffff;
+}
+
+.dashboard-page {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: clip !important;
+}
+
+.dashboard-page .analytics-panels {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.dashboard-page .analytics-performance-panel {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Contained container for Recharts to eliminate ResizeObserver oscillation */
+.chart-responsive-wrap,
+.analytics-chart-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+.recharts-responsive-container {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.recharts-wrapper {
+  max-width: 100% !important;
+}
+
+.recharts-surface {
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+/* Controlled internal scrolling for dashboard activity feed & product catalog */
+.dashboard-page .recent-sales .activity-feed-list {
+  max-height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  padding-right: 6px;
+}
+
+@media (max-width: 720px) {
+  .dashboard-page .recent-sales .activity-feed-list {
+    max-height: 420px;
+    padding-right: 4px;
+  }
+}
+
+/* Analytics table wrap bounds and responsive scroll */
+.dashboard-page .analytics-panel .analytics-table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 640px) {
+  .dashboard-page .analytics-panel .analytics-table {
+    min-width: 480px;
+  }
+}
+
+.dashboard-page .product-list {
+  min-width: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.dashboard-page .product-list .data-toolbar {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  margin: 6px 0 14px;
+}
+
+.dashboard-page .product-list .catalog-grid {
+  max-height: 500px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px 6px 2px;
+}
+
+@media (max-width: 720px) {
+  .dashboard-page .product-list .catalog-grid {
+    max-height: 420px;
+    padding: 4px 4px 6px 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-page .recent-sales .sale-card-enhanced {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+    border-radius: 10px;
+  }
+
+  .dashboard-page .recent-sales .sale-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .dashboard-page .recent-sales .sale-qr-preview {
+    flex: 0 0 50px;
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    background: #f8fafc;
+    border: 1px solid #e8edf4;
+    border-radius: 6px;
+    padding: 2px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-page .recent-sales .sale-qr-preview .qr-image,
+  .dashboard-page .recent-sales .sale-qr-preview .qr-placeholder {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 3px;
+    display: block;
+  }
+
+  .dashboard-page .recent-sales .sale-qr-preview span {
+    font-size: 7px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    margin-top: 1px;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .dashboard-page .recent-sales .sale-title-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 3px;
+  }
+
+  .dashboard-page .recent-sales .sale-title-row {
+    display: flex;
+    flex-direction: row !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .dashboard-page .recent-sales .sale-product-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .dashboard-page .recent-sales .sale-price-badge {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0d9488;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid #bbf7d0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .dashboard-page .recent-sales .sale-meta-subrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1px;
+    width: 100%;
+  }
+
+  .dashboard-page .recent-sales .sale-qr-id-copy-btn {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 10.5px;
+    padding: 1px 5px;
+    gap: 3px;
+    border-radius: 4px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap !important;
+    flex-shrink: 1;
+  }
+
+  .dashboard-page .recent-sales .sale-qr-id-copy-btn span {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    line-height: 1;
+  }
+
+  .dashboard-page .recent-sales .sale-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin-top: 0 !important;
+  }
+
+  .dashboard-page .recent-sales .sale-detail-col {
+    padding: 4px 6px !important;
+    border-radius: 5px !important;
+    min-width: 0;
+    gap: 1px !important;
+  }
+
+  .dashboard-page .recent-sales .sale-detail-col .detail-col-label {
+    font-size: 8px !important;
+    line-height: 1.1 !important;
+  }
+
+  .dashboard-page .recent-sales .sale-detail-col .detail-col-value {
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  .dashboard-page .recent-sales .sale-detail-col.countdown-detail-col {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    padding: 3px 6px !important;
+  }
+
+  .dashboard-page .recent-sales .sale-detail-col.sale-detail-customer,
+  .dashboard-page .recent-sales .sale-detail-col.countdown-detail-col,
+  .dashboard-page .recent-sales .sale-detail-col.sale-detail-returned {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media print {
+  .dashboard-page .recent-sales .activity-feed-list,
+  .dashboard-page .product-list .catalog-grid {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   22. Mobile modal clearance — QR scan result / product details modals
+   The fixed bottom nav (z-index 100, --warq-bottom-nav-base + safe-area) must
+   never cover modal content. Reserve its full height plus a breathing gap as
+   backdrop bottom padding and cap the card so its internal scroll ends fully
+   above the nav. Nav breakpoint only; desktop (>= 861px) keeps its existing
+   modal sizing.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .modal-backdrop {
+    align-items: start;
+    justify-items: center;
+    padding-bottom: calc(var(--warq-bottom-nav-base, 68px) + var(--warq-bottom-nav-clearance, 16px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-backdrop > .scanner-modal,
+  .modal-backdrop > .detail-modal,
+  .modal-backdrop > .manage-user {
+    max-height: calc(100vh - (var(--warq-bottom-nav-base, 68px) + var(--warq-bottom-nav-clearance, 16px)) - 40px - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - (var(--warq-bottom-nav-base, 68px) + var(--warq-bottom-nav-clearance, 16px)) - 40px - env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Extra inner bottom padding so the last action button ("Scan another")
+     never sits flush against the modal edge before the nav reserves space. */
+  .scanner-modal .scanner-result,
+  .scanner-modal .scanner-processing,
+  .detail-modal {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ==========================================================================
+   ADMIN — NOTIFICATIONS AREA REDESIGN (Messages tab)
+   SENT BROADCASTS & NOTIFICATIONS  +  ANNOUNCEMENTS & NOTIFICATIONS
+   Consistent search, contained internal scroll for large datasets, and
+   polished responsive behavior on mobile / tablet / laptop / desktop.
+   ========================================================================== */
+
+/* ---- Shared search fields: compact, stable, radius + focus stays clean ---- */
+
+.announcement-search-wrap {
+  flex: 1 1 200px;
+  min-width: 180px;
+  max-width: 340px;
+  height: 40px;
+  padding: 0 10px 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.announcement-search-wrap:focus-within {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.announcement-search-wrap .search-icon-muted {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.announcement-search-wrap input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+.announcement-search-wrap input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.announcement-search-wrap input:focus,
+.announcement-search-wrap input:focus-visible {
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.announcement-search-clear {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.announcement-search-clear:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+/* ---- SENT BROADCASTS panel ---- */
+
+.admin-sent-notifications {
+  margin-top: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.notification-panel-heading-text {
+  min-width: 0;
+}
+
+.notification-panel-heading-text .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notification-panel-heading-text h2 {
+  font-size: 17px;
+  margin: 4px 0 2px;
+  color: #0f172a;
+}
+
+.notification-panel-heading-text p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  max-width: 640px;
+}
+
+/* Head search sits at a fixed width on desktop so the heading wraps cleanly
+   next to it; on mobile it becomes a full-width row below the text. */
+.notification-panel-search {
+  flex: 0 0 260px;
+  min-width: 0;
+  max-width: 320px;
+  align-self: flex-start;
+}
+
+/* Contained internal scroll so thousands of notification records never
+   stretch the page. */
+.notification-list-scroll {
+  max-height: min(520px, calc(100vh - 320px));
+  max-height: min(520px, calc(100dvh - 320px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.notification-list-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.notification-list-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.notification-list-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 3px solid #ffffff;
+  background-clip: padding-box;
+}
+
+.notification-list-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Notification cards — consistent spacing, readable rows */
+.admin-notification-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.admin-notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-notification-item:hover {
+  background: #f1f5f9;
+  border-color: #dbe4ee;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.admin-notif-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-notif-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.admin-notif-content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  align-self: stretch;
+}
+
+.admin-notif-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-notif-title-row strong {
+  font-size: 13.5px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.admin-notif-title-row .pill {
+  flex-shrink: 0;
+}
+
+.admin-notif-body {
+  margin: 0;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-notif-meta {
+  display: flex;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.admin-notif-meta strong {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.notification-empty {
+  margin: 16px;
+}
+
+/* ---- ANNOUNCEMENTS & NOTIFICATIONS composer ---- */
+
+.announcement-composer {
+  padding: 20px 22px;
+  background: #ffffff;
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.announcement-composer-head {
+  display: flex;
+  gap: 14px;
+}
+
+.announcement-composer-head h2 {
+  margin: 5px 0 4px;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.announcement-composer-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  max-width: 640px;
+  line-height: 1.5;
+}
+
+.announcement-audience-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.announcement-audience-tabs button {
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.announcement-audience-tabs button.active {
+  background: #ffffff;
+  color: #0d9488;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* Merchant picker for "Specific merchants" */
+.announcement-user-picker {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  display: grid;
+  gap: 10px;
+}
+
+.announcement-user-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.announcement-user-toolbar .announcement-search-wrap {
+  flex: 1 1 220px;
+  max-width: 420px;
+  height: 40px;
+}
+
+.announcement-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.announcement-user-toolbar .announcement-toolbar-actions {
+  margin-left: auto;
+}
+
+/* Merchant list — capped internal scroll for large audiences */
+.announcement-user-list {
+  max-height: 280px;
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.announcement-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.announcement-user-row:hover {
+  border-color: #cbd5e1;
+}
+
+.announcement-user-row.selected {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+/* Neutralise the global input styling (width/padding/border/radius) that would
+   otherwise blow the merchant checkbox up to full width and break the row
+   alignment inside the "Specific merchants" picker. */
+.announcement-user-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  accent-color: #0d9488;
+  cursor: pointer;
+}
+
+.announcement-user-meta {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.announcement-user-meta strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.announcement-user-meta small {
+  font-size: 11px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.announcement-selected-count {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Composer form fields — consistent, roomy, touch-friendly */
+.announcement-composer > label {
+  display: grid;
+  gap: 8px;
+  color: #53647c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.announcement-composer textarea,
+.announcement-composer > label input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---- Responsive: tablet / mobile ---- */
+
+@media (max-width: 768px) {
+  .notification-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* SENT BROADCASTS search — full-width, correctly tall, comfortable type so
+     it never renders thin/squashed next to the panel heading on phones.
+     flex:none keeps the explicit height authoritative: flex-basis:100% inside
+     a column flex would otherwise override height and collapse the bar to its
+     content height (the "extremely thin" search field). */
+  .notification-panel-search {
+    flex: none;
+    width: 100%;
+    max-width: none;
+    height: 44px;
+    align-self: stretch;
+  }
+  .notification-panel-search input {
+    font-size: 16px;
+    height: 100%;
+    padding: 0;
+  }
+
+  .announcement-user-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .announcement-user-toolbar .announcement-search-wrap,
+  .announcement-user-toolbar .announcement-toolbar-actions {
+    width: 100%;
+    flex: 1 1 auto;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .announcement-toolbar-actions .secondary-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .notification-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px 16px 12px;
+  }
+
+  .notification-panel-search {
+    flex: none;
+    width: 100%;
+    max-width: none;
+    height: 44px;
+  }
+
+  .admin-notification-list {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .notification-list-scroll {
+    max-height: min(400px, calc(100vh - 260px));
+    max-height: min(400px, calc(100dvh - 260px));
+  }
+
+  .admin-notification-item {
+    padding: 12px 13px;
+    gap: 10px;
+  }
+
+  .announcement-composer {
+    padding: 16px 16px;
+    gap: 14px;
+  }
+
+  .announcement-user-picker {
+    padding: 10px;
+  }
+
+  .announcement-user-list {
+    max-height: 240px;
+  }
+}
+
+/* Merchant rows — keep the checkbox, avatar, text, and check tick aligned on a
+   clean horizontal line even on the narrowest phones, with every text field
+   wrapped, separated, and contained inside the row.
+
+   MOBILE FIX: the list is switched from CSS-grid to normal block flow. CSS grid
+   clamps each implicit row to a fixed height (the ~70px tracks measured on
+   phones) and refuses to grow them even with `grid-template-rows: auto !important`,
+   so once merchant text wraps to multiple lines it overflows its own row and
+   overlaps the next merchant's card. Block flow lets every row grow to fit its
+   content, guaranteed. */
+@media (max-width: 640px) {
+  .announcement-user-list {
+    display: block;
+  }
+
+  /* Re-create the row gap that `display: grid; gap` previously provided. */
+  .announcement-user-row {
+    margin-bottom: 6px;
+  }
+  .announcement-user-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .announcement-user-list,
+  .announcement-user-row,
+  .announcement-user-meta,
+  .announcement-user-meta strong {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .announcement-user-row {
+    padding: 9px 10px;
+    gap: 9px;
+    min-height: 44px;
+    height: auto;
+    box-sizing: border-box;
+  }
+
+  /* The text block owns the remaining row space and grows the row as needed;
+     it is never clipped or given a fixed height on mobile. */
+  .announcement-user-meta {
+    display: grid;
+    gap: 3px;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    align-content: center;
+  }
+
+  /* Merchant name — always wraps within the available width so it never spills
+     out of the profile / container area. */
+  .announcement-user-meta strong {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Detail line ("shop · email · phone") wraps independently, stays clearly
+     separated from the name, and is fully contained inside the row. */
+  .announcement-user-meta small {
+    display: block;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-overflow: clip;
+    line-height: 1.4;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .announcement-user-meta strong {
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 420px) {
+  .notification-panel-heading-text h2 {
+    font-size: 15.5px;
+  }
+
+  .announcement-composer-head h2 {
+    font-size: 17px;
+  }
+
+  .announcement-composer-head p {
+    font-size: 12.5px;
+  }
+
+  .announcement-audience-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .announcement-audience-tabs button {
+    width: 100%;
+    padding: 9px 10px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .admin-notif-title-row .pill {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* ---- Print: expand internal scroll so nothing gets clipped ---- */
+
+@media print {
+  .notification-list-scroll,
+  .announcement-user-list {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ==========================================================================
+   SALE PRICE & WARRANTY ACTIVATION CONFIRM FLOW
+   ========================================================================== */
+
+.scanner-sale-confirm {
+  width: 100%;
+  padding: 4px 0;
+}
+
+.scanner-sale-confirm form {
+  display: grid;
+  gap: 12px;
+}
+
+.scanner-price-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.scanner-price-compare span {
+  flex: 1 1 40%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scanner-price-compare strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scanner-sale-price-field,
+.scanner-customer-grid label,
+.scanner-sale-confirm label {
+  display: grid;
+  gap: 7px;
+  color: #53647c;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.scanner-sale-price-field input,
+.scanner-sale-confirm input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.scanner-customer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.scanner-confirm-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: stretch;
+  margin-top: 6px;
+}
+
+.scanner-confirm-actions button {
+  flex: 1;
+  justify-content: center;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.scanner-form-error {
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.customer-sale-price-box {
+  margin-top: 4px;
+  display: grid;
+  gap: 8px;
+}
+
+.customer-original-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.customer-original-price strong {
+  color: #166534;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.customer-sale-price-field {
+  display: grid;
+  gap: 7px;
+  color: #53647c;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.customer-sale-price-field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .scanner-customer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scanner-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .scanner-confirm-actions button {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   MOBILE QR SCANNER — SALE CONFIRM (PHONE-SIZED SCREENS)
+   Keeps the section clean, fully inside one thumb-friendly column and free of
+   overflow. Desktop/tablet layout above stays untouched.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .scanner-result-enriched .scanner-sale-confirm {
+    padding: 0;
+  }
+
+  .scanner-sale-confirm form {
+    gap: 14px;
+  }
+
+  /* Price comparison block stacks into neat labeled rows instead of
+     squeezing label + amount side by side on narrow widths. */
+  .scanner-price-compare {
+    gap: 0;
+    flex-direction: column;
+    padding: 6px 10px;
+    overflow: hidden;
+  }
+
+  .scanner-price-compare span {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 8px 0;
+    justify-content: space-between;
+  }
+
+  .scanner-price-compare span + span {
+    border-top: 1px dashed #e2e8f0;
+  }
+
+  .scanner-price-compare strong {
+    font-size: 14px;
+  }
+
+  /* Label + input pairs: comfortable tap targets on phones. */
+  .scanner-sale-price-field,
+  .scanner-customer-grid label,
+  .scanner-sale-confirm label {
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .scanner-sale-price-field input,
+  .scanner-customer-grid input,
+  .scanner-sale-confirm input {
+    min-height: 48px;
+    padding: 10px 13px;
+    font-size: 16px;
+  }
+
+  .scanner-sale-price-field input {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .scanner-confirm-actions {
+    margin-top: 4px;
+    gap: 10px;
+  }
+
+  .scanner-confirm-actions button {
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
+    white-space: normal;
+  }
+
+  .scanner-confirm-actions .secondary-button {
+    order: 3;
+  }
+
+  .scanner-form-error {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+/* Extra polish for very small phones: keep the hero + form fully airy. */
+@media (max-width: 420px) {
+  .scanner-result-enriched .warranty-hero-banner {
+    gap: 10px;
+    padding: 12px 14px !important;
+  }
+
+  .scanner-result-enriched .status-hero-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .scanner-result-enriched .status-hero-text h3 {
+    font-size: 14px;
+  }
+
+  .scanner-result-enriched .status-hero-text p {
+    font-size: 11.5px;
+  }
+
+  .scanner-sale-confirm form {
+    gap: 13px;
+  }
+
+  .scanner-price-compare span {
+    font-size: 11.5px;
+  }
+
+  .scanner-price-compare strong {
+    font-size: 13px;
+  }
+}
+
+/* ==========================================================================
+   CUSTOMER ADDRESS / NOTES — CLEAN FULL-WIDTH NOTE ROWS (QR scanner + product)
+   responsive.css forces every scanner-detail row into a 42%/1fr two-column
+   grid with right-aligned values at <= 700px. Note-style rows (Customer
+   Address, Customer Notes, Product Notes, Return reason) must instead stay
+   stacked full-width and left-aligned so long addresses wrap naturally.
+   ui-polish.css loads last, so these overrides win on mobile and desktop
+   keeps its existing enriched layout untouched.
+   ========================================================================== */
+.scanner-result .scanner-details > div.scanner-note,
+.scanner-result-enriched .scanner-details > div.scanner-note {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  justify-content: initial;
+}
+
+.scanner-result .scanner-details > div.scanner-note dt,
+.scanner-result-enriched .scanner-details > div.scanner-note dt {
+  width: 100%;
+  max-width: none;
+  flex: initial;
+  margin: 0;
+}
+
+.scanner-result .scanner-details > div.scanner-note dd,
+.scanner-result-enriched .scanner-details > div.scanner-note dd {
+  width: 100%;
+  max-width: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+/* Snap note rows back to the stacked, left-aligned layout where the mobile
+   two-column !important override in responsive.css would otherwise apply. */
+@media (max-width: 700px) {
+  .scanner-result .scanner-details > div.scanner-note,
+  .scanner-result-enriched .scanner-details > div.scanner-note {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 4px 0 !important;
+    align-items: start !important;
+    justify-content: initial !important;
+    padding: 10px 12px !important;
+  }
+
+  .scanner-result .scanner-details > div.scanner-note dd,
+  .scanner-result-enriched .scanner-details > div.scanner-note dd {
+    text-align: left !important;
+    max-width: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+}
+
