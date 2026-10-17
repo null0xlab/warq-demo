@@ -10,7 +10,6 @@ dist-ssr/
 npm-debug.log*
 .DS_Store
 Thumbs.db
-.vercel
 coverage/
 playwright-report/
 test-results/

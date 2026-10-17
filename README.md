@@ -20,12 +20,11 @@ service and no real customer data.
 
 | Target | URL |
 | --- | --- |
-| GitHub Pages (live now) | <https://null0xlab.github.io/warq-demo/> |
-| Vercel (primary) | import the repo at <https://vercel.com/new> — see [Deployment](#deployment) |
+| GitHub Pages (live) | <https://null0xlab.github.io/warq-demo/> |
 
-Both targets are built from the same codebase. The only difference is the base
-path (`/` on Vercel, `/warq-demo/` on GitHub Pages), selected by the
-`VITE_BASE_PATH` environment variable.
+The demo is built and hosted entirely on GitHub Pages, so the base path is
+`/warq-demo/`, selected by the `VITE_BASE_PATH` environment variable.
+`public/404.html` keeps deep links (such as `/warq-demo/scan/<CODE>`) working.
 
 ---
 
@@ -43,8 +42,7 @@ flowchart TD
     QR["src/demo/qr-payload.js\ncompressed QR payload + CRC-32"]
     SYNC["src/realtime.js\nBroadcastChannel cross-tab sync"]
   end
-  PROXY["Optional AI proxy (Vercel serverless /api/ai)\nkey never leaves the server env"]
-  VERCEL["Vercel static hosting"]
+  PROXY["Optional external AI endpoint\n(only if VITE_AI_PROXY_URL is set)"]
   PAGES["GitHub Pages static hosting"]
 
   UI --> ADAPTER --> BACKEND --> REPO --> DB
@@ -52,7 +50,6 @@ flowchart TD
   UI --> QR
   UI <--> SYNC
   BACKEND -. "AI chat (optional)" .-> PROXY
-  UI -. static bundle .-> VERCEL
   UI -. static bundle .-> PAGES
 ```
 
@@ -159,52 +156,9 @@ npm run test:smoke
 
 ## Deployment
 
-### Vercel (primary)
+### GitHub Pages (the only target — already live)
 
-**Option A — import from GitHub (no CLI, recommended).** Vercel cannot be
-deployed without your own account, so this is the one step that needs you:
-
-1. Open <https://vercel.com/new> and sign in (GitHub login is free).
-2. Import the repository `null0xlab/warq-demo`.
-3. Accept the detected settings (Framework **Vite**, build `npm run build`,
-   output `dist`). `vercel.json` already supplies them.
-4. Optionally add an AI key under **Settings → Environment Variables**
-   (`GEMINI_API_KEY`, or `GROQ_API_KEY` / `OPENROUTER_API_KEY`).
-5. Deploy. Vercel prints the production URL (e.g. `https://warq-demo.vercel.app`).
-
-**Option B — CLI.**
-
-```powershell
-npm install -g vercel
-vercel login
-vercel link
-vercel env add GEMINI_API_KEY production
-vercel --prod
-```
-
-`vercel.json` already sets the framework, build command, output directory and
-the `/scan/:code` + `/app/:path*` rewrites so deep links refresh correctly.
-The optional AI proxy lives in `api/ai.js` (Vercel serverless function, routed at
-`/api/ai`). It reads a single free-tier key from the Vercel environment and the
-key never reaches the browser:
-
-- `GEMINI_API_KEY` (Google AI Studio, free tier) — preferred, or
-- `GROQ_API_KEY` (Groq free tier), or
-- `OPENROUTER_API_KEY` (OpenRouter free models).
-- `AI_MODEL` — optional model override (e.g. `gemini-2.0-flash`).
-
-Set the key with `vercel env add GEMINI_API_KEY production` and redeploy. Without
-a key the function returns `503` and the assistant falls back to a deterministic
-local reply, and the UI says so. With no key configured, no serverless function
-is required at all.
-
-> The GitHub Pages mirror has no serverless runtime, so it always uses the
-> offline assistant. Everything else — including the QR payload, claims,
-> sandbox payments and exports — is fully functional there.
-
-### GitHub Pages (mirror — already live)
-
-The mirror is deployed and running at <https://null0xlab.github.io/warq-demo/>.
+The demo is deployed and running at <https://null0xlab.github.io/warq-demo/>.
 To reproduce it from scratch:
 
 ```powershell
@@ -215,10 +169,21 @@ gh repo create null0xlab/warq-demo --public --source=. --remote=origin --push
 gh api -X POST repos/null0xlab/warq-demo/pages -f build_type=workflow
 ```
 
-The workflow in `.github/workflows/deploy.yml` builds with
-`VITE_BASE_PATH=/warq-demo/`, which is the only change needed for the mirror.
-`public/404.html` redirects deep links such as `/warq-demo/scan/<CODE>` back into
-the hash router.
+The workflow in `.github/workflows/deploy.yml` runs `npm run build` with
+`VITE_BASE_PATH=/warq-demo/` and publishes `dist` to Pages. That base path is the
+only build difference from a local run. `public/404.html` redirects deep links
+such as `/warq-demo/scan/<CODE>` back into the hash router, so refreshing any
+deep link works.
+
+There is no server component and no environment secret to configure: the whole
+application is a static bundle plus the GitHub Actions build.
+
+### AI assistant (optional)
+
+The assistant works out of the box using a deterministic local rule set that
+answers from your own shop data, and every reply is labelled with its source.
+If you host your own AI endpoint, point `VITE_AI_PROXY_URL` at it and rebuild;
+leave it empty (the default) to stay fully offline.
 
 ---
 
@@ -234,8 +199,9 @@ the hash router.
 - **The warranty claim / customer role is an extension.** It is not part of the
   original production product; it was added so the demo can show the full
   customer journey end to end, and it is disclosed as such.
-- **AI replies depend on configuration.** With a proxy key the assistant uses the
-  real model; without one it answers from a deterministic local rule set.
+- **AI replies are local.** The demo ships with no AI backend, so the assistant
+  answers from a deterministic rule set built from your own data. Point
+  `VITE_AI_PROXY_URL` at your own endpoint to use a live model instead.
 - **No linter or type checker.** The production WarQ codebase has none either;
   the gates are the Vite production build and the Playwright smoke suite.
 - **This demo never writes to the production WarQ codebase.** The original

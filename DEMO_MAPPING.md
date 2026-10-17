@@ -30,7 +30,7 @@ Legend for **Fidelity**:
 | Track a claim status | *Not in the original product* | Same as above | Claim timeline rendered in the customer portal and the admin Claims tab. | Browser-only |
 | Realtime chat across tabs | Server polling (`chat-support.js`) | Multi‑user fan‑out | Same conversation model and records in the local DB; cross‑tab updates are pushed with a `BroadcastChannel` instead of HTTP polling. | Equivalent |
 | Support chat / admin queue | Server `support_*` endpoints | Routing between customer and admin | Same endpoints and thread statuses; image attachments are stored as data URLs in the local DB instead of object storage. | Equivalent |
-| Chat Board AI assistant | OpenRouter via server (`/api/ai`) | Keeps the API key off the client and proxies the model | Calls an optional Vercel serverless proxy when `VITE_AI_PROXY_URL` is configured; otherwise a deterministic local assistant answers from the shop's own data. Every reply is labelled with its source. | Equivalent (proxy) / Simulated (offline) |
+| Chat Board AI assistant | OpenRouter via the production server (`/api/ai`) | Keeps the API key off the client and proxies the model | Ships with a deterministic local assistant that answers from the shop's own data, and calls an optional external AI endpoint only if `VITE_AI_PROXY_URL` is configured. Every reply is labelled with its source. | Simulated (offline) / Equivalent (external endpoint) |
 | AI insights ("AI Preview" module) | *Not in the original product* | Would need aggregation + a model | Deterministic cards computed from local QR/sales/claim data, each badged **Implemented** (computed) or **Preview** (heuristic projection). | Browser-only |
 | Subscriptions, plans and limits | Server `startPayment` + bKash/Nagad merchants | Payment capture requires a merchant account and webhooks | Real plans, entitlement enforcement and invoice history. Checkout is a sandbox simulator with test cards and a permanent **“Sandbox — no real payment”** banner. | Simulated |
 | Invoice history | Server `payments` table | Persistence | Same `payments` table and records; invoices listed in the Subscription screen. | Equivalent |
@@ -41,7 +41,7 @@ Legend for **Fidelity**:
 | SMS / WhatsApp notifications | External providers | Real messaging requires paid gateways | Not sent. Support WhatsApp link is a `wa.me` deep link opened by the user's own client. | Not replicated |
 | Payment gateway redirect | bKash / Nagad hosted checkout | Real merchant credentials | Sandbox checkout route `#/sandbox/<paymentId>`. | Simulated |
 | Email delivery | Firebase / SMTP | Outbound email service | Codes and notices are shown on screen, labelled demo. | Simulated |
-| Google Lens / third‑party scanner | Public HTTPS URL | A real domain is needed for a printed QR to resolve | Deployed to Vercel (and GitHub Pages). The compressed payload keeps even a dead link readable. | Equivalent |
+| Google Lens / third‑party scanner | Public HTTPS URL | A real domain is needed for a printed QR to resolve | Deployed to GitHub Pages. The compressed payload keeps even a dead link readable. | Equivalent |
 
 ## What is identical at the code level
 

@@ -4,7 +4,7 @@ export const BASE_PATH = ((env.BASE_URL || "/")).replace(/\/+$/, "") + "/";
 
 export const DEMO_MODE = env.VITE_DEMO_MODE !== "false";
 
-export const AI_PROXY_URL = (env.VITE_AI_PROXY_URL || "/api/ai").trim();
+export const AI_PROXY_URL = (env.VITE_AI_PROXY_URL || "").trim();
 
 export const APP_ORIGIN = typeof window === "undefined" ? "" : window.location.origin;
 
