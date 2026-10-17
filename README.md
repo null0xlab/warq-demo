@@ -20,8 +20,8 @@ service and no real customer data.
 
 | Target | URL |
 | --- | --- |
-| Vercel (primary) | _filled in after deployment_ |
-| GitHub Pages (mirror) | _filled in after deployment_ |
+| GitHub Pages (live now) | <https://null0xlab.github.io/warq-demo/> |
+| Vercel (primary) | import the repo at <https://vercel.com/new> — see [Deployment](#deployment) |
 
 Both targets are built from the same codebase. The only difference is the base
 path (`/` on Vercel, `/warq-demo/` on GitHub Pages), selected by the
@@ -159,10 +159,24 @@ npm run test:smoke
 
 ### Vercel (primary)
 
+**Option A — import from GitHub (no CLI, recommended).** Vercel cannot be
+deployed without your own account, so this is the one step that needs you:
+
+1. Open <https://vercel.com/new> and sign in (GitHub login is free).
+2. Import the repository `null0xlab/warq-demo`.
+3. Accept the detected settings (Framework **Vite**, build `npm run build`,
+   output `dist`). `vercel.json` already supplies them.
+4. Optionally add an AI key under **Settings → Environment Variables**
+   (`GEMINI_API_KEY`, or `GROQ_API_KEY` / `OPENROUTER_API_KEY`).
+5. Deploy. Vercel prints the production URL (e.g. `https://warq-demo.vercel.app`).
+
+**Option B — CLI.**
+
 ```powershell
 npm install -g vercel
+vercel login
 vercel link
-vercel env add VITE_AI_PROXY_URL production
+vercel env add GEMINI_API_KEY production
 vercel --prod
 ```
 
@@ -186,19 +200,23 @@ is required at all.
 > offline assistant. Everything else — including the QR payload, claims,
 > sandbox payments and exports — is fully functional there.
 
-### GitHub Pages (mirror)
+### GitHub Pages (mirror — already live)
+
+The mirror is deployed and running at <https://null0xlab.github.io/warq-demo/>.
+To reproduce it from scratch:
 
 ```powershell
-git init
+git init -b main
 git add .
 git commit -m "WarQ demo"
-gh repo create null0xlab/warq-demo --public --source=. --push
+gh repo create null0xlab/warq-demo --public --source=. --remote=origin --push
+gh api -X POST repos/null0xlab/warq-demo/pages -f build_type=workflow
 ```
 
-Then in **Settings → Pages** choose **GitHub Actions**. The workflow in
-`.github/workflows/deploy.yml` builds with `VITE_BASE_PATH=/warq-demo/`, which is
-the only change needed for the mirror. `public/404.html` redirects deep links
-such as `/warq-demo/scan/<CODE>` back into the hash router.
+The workflow in `.github/workflows/deploy.yml` builds with
+`VITE_BASE_PATH=/warq-demo/`, which is the only change needed for the mirror.
+`public/404.html` redirects deep links such as `/warq-demo/scan/<CODE>` back into
+the hash router.
 
 ---
 
